@@ -35,6 +35,16 @@ body {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
+  
+  /* Ensure smooth scrolling on mobile */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix mobile scroll momentum */
+  [data-theme] {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* Prevent zoom on input focus on iOS */

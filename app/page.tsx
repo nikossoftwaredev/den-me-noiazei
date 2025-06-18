@@ -59,9 +59,14 @@ const formatTime = (seconds: number): string => {
 
 const formatDistance = (meters: number): string => {
   if (meters >= 1000) {
-    return `${(meters / 1000).toFixed(2)} km`;
+    return `${(meters / 1000).toFixed(1)} km`;
+  } else if (meters >= 100) {
+    return `${meters.toFixed(0)} m`;
+  } else if (meters >= 10) {
+    return `${meters.toFixed(1)} m`;
+  } else {
+    return `${meters.toFixed(2)} m`;
   }
-  return `${meters.toFixed(0)} m`;
 };
 
 export default function Home() {
@@ -77,6 +82,8 @@ export default function Home() {
   const [currentPosition, setCurrentPosition] = useState<Position | null>(null);
   const [lastGpsUpdate, setLastGpsUpdate] = useState<number>(0);
   const [isTabVisible, setIsTabVisible] = useState(true);
+  const [lastCalculatedDistance, setLastCalculatedDistance] =
+    useState<number>(0);
 
   const watchIdRef = useRef<number | null>(null);
   const lastPositionRef = useRef<Position | null>(null);
@@ -99,6 +106,25 @@ export default function Home() {
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Check for existing location permission on app load
+    const checkExistingPermission = async () => {
+      if ("permissions" in navigator) {
+        try {
+          const permission = await navigator.permissions.query({
+            name: "geolocation",
+          });
+          if (permission.state === "granted") {
+            setHasLocationPermission(true);
+          }
+        } catch {
+          // Permission API not available, no action needed
+        }
+      }
+    };
+
+    checkExistingPermission();
+
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
@@ -131,17 +157,36 @@ export default function Home() {
       return;
     }
 
+    // First check if we already have permission
+    if ("permissions" in navigator) {
+      try {
+        const permission = await navigator.permissions.query({
+          name: "geolocation",
+        });
+        if (permission.state === "granted") {
+          setHasLocationPermission(true);
+          setIsLoading(false);
+          setError("");
+          return;
+        }
+      } catch {
+        // Permissions API not available, continue with fallback
+        console.log("Permissions API not available, using fallback");
+      }
+    }
+
     try {
       await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000,
+          timeout: 15000, // Increased timeout
+          maximumAge: 0, // Force fresh location
         });
       });
 
       setHasLocationPermission(true);
       setIsLoading(false);
+      setError(""); // Clear any previous errors
     } catch (err) {
       const error = err as GeolocationPositionError;
       let errorMessage = "Unable to access location.";
@@ -149,10 +194,11 @@ export default function Home() {
       switch (error.code) {
         case 1:
           errorMessage =
-            "Location access denied. Please enable location permissions.";
+            "Location access denied. Please refresh and allow location access.";
           break;
         case 2:
-          errorMessage = "Location unavailable. Please try again.";
+          errorMessage =
+            "Location unavailable. Check your device settings and try again.";
           break;
         case 3:
           errorMessage = "Location request timed out. Please try again.";
@@ -161,6 +207,7 @@ export default function Home() {
 
       setError(errorMessage);
       setIsLoading(false);
+      setHasLocationPermission(false); // Ensure permission state is correct
     }
   };
 
@@ -195,8 +242,12 @@ export default function Home() {
             lastPositionRef.current,
             newPosition
           );
-          if (distance > 5) {
-            // Only update if moved more than 5 meters
+
+          // Store last calculated distance for debug
+          setLastCalculatedDistance(distance);
+
+          if (distance > 1) {
+            // Lowered threshold from 5m to 1m
             setTotalDistance((prev) => prev + distance);
           }
         }
@@ -343,6 +394,19 @@ export default function Home() {
                 <strong>Tab Status:</strong>{" "}
                 {isTabVisible ? "🟢 Active" : "🔴 Background (GPS paused)"}
               </li>
+              <li>
+                <strong>Last Move:</strong>{" "}
+                {lastCalculatedDistance > 0
+                  ? `${lastCalculatedDistance.toFixed(2)}m`
+                  : "No movement"}
+              </li>
+              <li>
+                <strong>Total Raw:</strong> {totalDistance.toFixed(2)}m
+              </li>
+              <li>
+                <strong>Total Formatted:</strong>{" "}
+                {formatDistance(totalDistance)}
+              </li>
             </ul>
           </div>
         </div>
@@ -350,7 +414,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-md mx-auto w-full">
+        <div className="flex-1 flex flex-col items-center p-6 max-w-md mx-auto w-full">
           {!hasLocationPermission ? (
             <div className="text-center space-y-6">
               <div className="text-6xl mb-4 flex justify-center">
@@ -381,7 +445,7 @@ export default function Home() {
             <div className="w-full flex-1 flex flex-col space-y-6 overflow-y-hidden">
               {/* Stats Display */}
               <div className="text-center space-y-4 shrink-0">
-                <div className="stats shadow bg-base-200">
+                <div className="stats shadow bg-base-200 w-full">
                   <div className="stat">
                     <div className="stat-title text-base-content/70">Time</div>
                     <div className="stat-value text-3xl font-mono text-primary">
@@ -390,7 +454,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="stats shadow bg-base-200">
+                <div className="stats shadow bg-base-200 w-full">
                   <div className="stat">
                     <div className="stat-title text-base-content/70">
                       Distance
@@ -434,12 +498,15 @@ export default function Home() {
 
               {/* Laps List - Scrollable */}
               {laps.length > 0 && (
-                <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 flex flex-col min-h-0 max-h-80">
                   <h3 className="text-lg font-semibold mb-3 text-base-content shrink-0">
                     Laps
                   </h3>
-                  <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-                    {[...laps].reverse().map((lap) => (
+                  <div
+                    className="flex-1 overflow-y-auto overflow-x-hidden space-y-2 pr-2 pb-4"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                  >
+                    {laps.map((lap) => (
                       <div
                         key={lap.lapNumber}
                         className="card bg-base-200 compact shadow shrink-0"
