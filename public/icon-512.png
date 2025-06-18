@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#22c55e;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg)" stroke="#16a34a" stroke-width="8"/>
+  
+  <!-- GPS/Location icon -->
+  <circle cx="256" cy="256" r="120" fill="#ffffff" opacity="0.9"/>
+  <circle cx="256" cy="256" r="80" fill="#16a34a"/>
+  <circle cx="256" cy="256" r="40" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="20" fill="#16a34a"/>
+  
+  <!-- Path/track indicator -->
+  <path d="M 180 180 Q 256 120 332 180 Q 256 240 180 240 Q 256 300 332 300" 
+        stroke="#ffffff" 
+        stroke-width="12" 
+        fill="none" 
+        opacity="0.7"
+        stroke-linecap="round"/>
+  
+  <!-- Walker icon -->
+  <text x="256" y="420" font-family="Arial, sans-serif" font-size="80" text-anchor="middle" fill="#ffffff">��‍♂️</text>
+</svg> 
