@@ -236,6 +236,7 @@ export default function Home() {
 
         setCurrentPosition(newPosition);
         setLastGpsUpdate(Date.now());
+        setError(""); // Clear any GPS errors when position updates successfully
 
         if (lastPositionRef.current) {
           const distance = calculateDistance(
@@ -246,8 +247,8 @@ export default function Home() {
           // Store last calculated distance for debug
           setLastCalculatedDistance(distance);
 
-          if (distance > 1) {
-            // Lowered threshold from 5m to 1m
+          if (distance > 0.3) {
+            // Lowered threshold to 0.5m for better sensitivity
             setTotalDistance((prev) => prev + distance);
           }
         }
@@ -397,7 +398,9 @@ export default function Home() {
               <li>
                 <strong>Last Move:</strong>{" "}
                 {lastCalculatedDistance > 0
-                  ? `${lastCalculatedDistance.toFixed(2)}m`
+                  ? `${lastCalculatedDistance.toFixed(2)}m ${
+                      lastCalculatedDistance > 0.3 ? "✅" : "❌"
+                    }`
                   : "No movement"}
               </li>
               <li>
