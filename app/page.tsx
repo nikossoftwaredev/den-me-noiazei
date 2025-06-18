@@ -302,6 +302,17 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Background Warning */}
+      {isTracking && !isTabVisible && (
+        <div className="bg-warning text-warning-content p-3 text-sm">
+          <div className="max-w-md mx-auto text-center">
+            <strong>⚠️ GPS Tracking Paused</strong>
+            <br />
+            Tab is in background. Keep this tab active for accurate tracking.
+          </div>
+        </div>
+      )}
+
       {/* Debug Info */}
       {debugMode && currentPosition && (
         <div className="bg-info text-info-content p-3 text-sm">
@@ -327,6 +338,10 @@ export default function Home() {
                 {lastGpsUpdate > 0
                   ? `${Math.round((Date.now() - lastGpsUpdate) / 1000)}s ago`
                   : "Waiting..."}
+              </li>
+              <li>
+                <strong>Tab Status:</strong>{" "}
+                {isTabVisible ? "🟢 Active" : "🔴 Background (GPS paused)"}
               </li>
             </ul>
           </div>
