@@ -433,7 +433,7 @@ export default function Home() {
               )}
 
               {error && (
-                <div className="alert alert-error">
+                <div className="alert alert-error shrink-0">
                   <span className="text-error-content">{error}</span>
                 </div>
               )}
