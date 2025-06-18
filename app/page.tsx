@@ -75,6 +75,8 @@ export default function Home() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [currentPosition, setCurrentPosition] = useState<Position | null>(null);
+  const [lastGpsUpdate, setLastGpsUpdate] = useState<number>(0);
+  const [isTabVisible, setIsTabVisible] = useState(true);
 
   const watchIdRef = useRef<number | null>(null);
   const lastPositionRef = useRef<Position | null>(null);
@@ -90,6 +92,16 @@ export default function Home() {
       setIsDarkMode(true);
       document.documentElement.setAttribute("data-theme", "dark");
     }
+
+    // Track tab visibility for GPS debugging
+    const handleVisibilityChange = () => {
+      setIsTabVisible(!document.hidden);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -176,6 +188,7 @@ export default function Home() {
         };
 
         setCurrentPosition(newPosition);
+        setLastGpsUpdate(Date.now());
 
         if (lastPositionRef.current) {
           const distance = calculateDistance(
@@ -196,8 +209,8 @@ export default function Home() {
       },
       {
         enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 1000,
+        timeout: 1000,
+        maximumAge: 0,
       }
     );
   };
@@ -308,6 +321,12 @@ export default function Home() {
               </li>
               <li>
                 <strong>Status:</strong> GPS tracking active
+              </li>
+              <li>
+                <strong>GPS Lag:</strong>{" "}
+                {lastGpsUpdate > 0
+                  ? `${Math.round((Date.now() - lastGpsUpdate) / 1000)}s ago`
+                  : "Waiting..."}
               </li>
             </ul>
           </div>
